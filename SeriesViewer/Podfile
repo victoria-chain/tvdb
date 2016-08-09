@@ -1,0 +1,11 @@
+platform :ios, '8.0'
+ 
+inhibit_all_warnings!
+use_frameworks!
+ 
+target 'SeriesViewer' do
+  pod 'Alamofire'
+  pod 'RealmSwift'
+  pod 'SimpleKeychain'
+  pod 'SDWebImage', '~>3.8'
+end
