@@ -38,7 +38,7 @@ class SeriesViewController: UIViewController {
     func showSeries(){
         downloader.authenticate(onError) { [unowned self] in
             print("logged in")
-            self.downloader.loadSeries(self.onError) { series in
+            self.downloader.loadUpdates(self.onError) { series in
                 self.series = series
                 self.collectionView.reloadData()
             }
@@ -66,7 +66,6 @@ extension SeriesViewController: UICollectionViewDataSource {
         }
         
         cell.titleLabel!.text = String(seriesToShow?.id) //TODO
-        //        cell.detailTextLabel!.text = favoritedRepository?.owner?.name
         return cell
     }
     

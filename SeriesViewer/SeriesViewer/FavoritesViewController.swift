@@ -41,8 +41,6 @@ extension FavoritesViewController: UICollectionViewDataSource {
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         let favoritedRepository = favoritedSeries?[indexPath.row]
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier("SeriesCell", forIndexPath: indexPath)
-        //        cell.textLabel!.text = favoritedRepository?.name
-//        cell.detailTextLabel!.text = favoritedRepository?.owner?.name
         return cell
     }
     

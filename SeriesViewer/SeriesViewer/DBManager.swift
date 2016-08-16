@@ -26,13 +26,6 @@ class DBManager {
     // MARK: - Public Methods
     func addToFavorites(repository: Series) {
         do {
-//            realm?.beginWrite()
-//            let newOwner = Owner(id: repository.ownerId, name: repository.ownerName)
-//            let newRepository = Repository(id: repository.id,
-//                                           name: repository.name,
-//                                           url: repository.url,
-//                                           owner: newOwner)
-//            realm?.add(newRepository, update: true)
             try realm?.commitWrite()
         } catch _ {
         }
@@ -41,11 +34,6 @@ class DBManager {
     func removeFromFavorites(repository: Series) {
         do {
             realm?.beginWrite()
-//            if let owner = repository.owner where owner.repositories.count == 1 {
-//                realm?.delete(owner)
-//            }
-//            realm?.delete(repository)
-            
             try realm?.commitWrite()
         } catch _ {
         }

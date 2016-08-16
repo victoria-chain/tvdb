@@ -12,10 +12,12 @@ import SimpleKeychain
 
 class Downloader {
     
+    // MARK: - Strings
     private let baseURLPath = "https://api.thetvdb.com"
     private let baseImageURLPath = "https://thetvdb.com/banners/_cache/posters/"
     private let apiKey = "9D215E2C81B076DC"
     
+    //MARK: - Properties
     private var tokenString: String = ""
     private var token: String {
         set {
@@ -28,7 +30,8 @@ class Downloader {
             return keychain.stringForKey("token") ?? ""
         }
     }
-    private var defaultHeaders: [String: String] {
+    
+    private var defaultHHTPHeaders: [String: String] {
         return ["Authorization": "Bearer \(token)", "Accept" : "application/json"]
     }
     
@@ -36,34 +39,35 @@ class Downloader {
     private func getRequest(path: String, parameters: [String: AnyObject]? = nil, encoding: ParameterEncoding = .JSON) -> Request {
         let request = Alamofire.request(.GET,
                                         "\(baseURLPath)/\(path)",
-                                        headers: defaultHeaders,
+                                        headers: defaultHHTPHeaders,
                                         parameters: parameters,
                                         encoding: encoding)
         print(request.debugDescription)
         return request
     }
     
-    private func postRequest(path: String, parameters: [String: AnyObject]? = nil) -> Request {
+    private func postRequest(path: String, parameters: [String: AnyObject]? = nil, encoding: ParameterEncoding = .JSON) -> Request {
         let request = Alamofire.request(.POST,
                                         "\(baseURLPath)/\(path)",
-                                        headers: defaultHeaders,
+                                        headers: defaultHHTPHeaders,
                                         parameters: parameters,
-                                        encoding: .JSON)
+                                        encoding: encoding)
         print(request.debugDescription)
         return request
-
     }
     
-    func login(onLoginError: () -> Void, onLoginSuccess: () -> Void) {
+    // MARK: Login
+    private func login(onLoginError: () -> Void, onLoginSuccess: () -> Void) {
         let request = postRequest("login", parameters: ["apikey": apiKey])
+        
         request.responseJSON { response in
             guard response.result.isSuccess
             else {
-                print("Error while login : \(response.result.error)")
+                print("Request failed while login : \(response.result.error)")
                 onLoginError()
                 return
             }
-            
+
             guard let
                 responseJSON = response.result.value as? [String: AnyObject],
                 token = responseJSON["token"] as? String
@@ -72,14 +76,15 @@ class Downloader {
                 onLoginError()
                 return
             }
+            
             self.token = token
             onLoginSuccess()
         }
     }
 
-    
-    func refreshToken(onRefreshError: ()-> Void, onRefreshSuccess: () -> Void) {
+    private func refreshToken(onRefreshError: ()-> Void, onRefreshSuccess: () -> Void) {
         let requestRefreshToken = getRequest("refresh_token")
+        
         requestRefreshToken.responseJSON { response in
             guard response.result.isSuccess
             else {
@@ -96,10 +101,34 @@ class Downloader {
                 onRefreshError()
                 return
             }
+            
             self.token = token
             onRefreshSuccess()
         }
-
+    }
+    
+    private func parseSeries(results: [AnyObject]) -> [Series]{
+        let series = results.flatMap({ (newSeries) -> Series? in
+            guard let
+                id = newSeries["id"] as? Int,
+                lastUpdated = newSeries["lastUpdated"] as? Int
+                else {
+                    return nil
+            }
+            return Series(id: id, lastUpdated: lastUpdated)
+        })
+        return series
+    }
+    
+    private func parseSeriesInfo(info: [String: AnyObject]) -> SeriesInfo? {
+        guard let
+            id = info["id"] as? Int
+            else {
+                print(info)
+                return nil
+        }
+        let name = info["seriesName"] as? String
+        return SeriesInfo(id: id, seriesName: name ?? "...")
     }
     
     // MARK: - Public Methods
@@ -128,31 +157,7 @@ class Downloader {
         }
     }
     
-    private func parseSeries(results: [AnyObject]) -> [Series]{
-        let series = results.flatMap({ (newSeries) -> Series? in
-            guard let
-                id = newSeries["id"] as? Int,
-                lastUpdated = newSeries["lastUpdated"] as? Int
-            else {
-                return nil
-            }
-            return Series(id: id, lastUpdated: lastUpdated)
-        })
-        return series
-    }
-    
-    private func parseSeriesInfo(info: [String: AnyObject]) -> SeriesInfo? {
-        guard let
-            id = info["id"] as? Int
-        else {
-            print(info)
-            return nil
-        }
-        let name = info["seriesName"] as? String
-        return SeriesInfo(id: id, seriesName: name ?? "...")
-    }
-    
-    func loadSeries(onLoadError: () -> Void, onLoadSuccess: ([Series]) -> Void) {
+    func loadUpdates(onLoadError: () -> Void, onLoadSuccess: ([Series]) -> Void) {
         let calendar = NSCalendar.currentCalendar()
         let components = calendar.components([.Year, .Month, .Day], fromDate: NSDate())
         components.day -= 7
@@ -171,7 +176,7 @@ class Downloader {
             
             guard let
                 responseJSON = response.result.value as? [String: AnyObject],
-                results = responseJSON["data"] as? [AnyObject]//TODO
+                results = responseJSON["data"] as? [AnyObject]
             else {
                 print("Invalid series received : \(response.debugDescription)")
                 onLoadError()
@@ -195,7 +200,7 @@ class Downloader {
             
             guard let
                 responseJSON = response.result.value as? [String: AnyObject],
-                info = responseJSON["data"] as? [String: AnyObject]//TODO
+                info = responseJSON["data"] as? [String: AnyObject]
             else {
                 print("Invalid info received : \(response.debugDescription)")
                 onInfoError()
